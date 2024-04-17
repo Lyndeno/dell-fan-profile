@@ -2,9 +2,11 @@
 #include <linux/printk.h>
 #include <linux/dmi.h>
 #include <linux/platform_profile.h>
-#include <linux/wmi.h>
+#include <linux/slab.h>
 
 #include "dell-smbios.h"
+
+static struct platform_profile_handler *handler;
 
 static void dell_fill_request(struct calling_interface_buffer *buffer,
 			       u32 arg0, u32 arg1, u32 arg2, u32 arg3)
@@ -189,6 +191,7 @@ int init_module(void)
 void cleanup_module(void)
 {
 	platform_profile_remove();
+	kfree(handler);
 	pr_info("Goodbye world 1.\n");
 }
 
