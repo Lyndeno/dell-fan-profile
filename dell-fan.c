@@ -81,8 +81,11 @@ static int pp_set(struct platform_profile_handler *pprof,
 		case PLATFORM_PROFILE_PERFORMANCE:
 			ret = set_state(DELL_PERFORMANCE);
 			break;
-		case PLATFORM_PROFILE_LOW_POWER:
+		case PLATFORM_PROFILE_QUIET:
 			ret = set_state(DELL_QUIET);
+			break;
+		case PLATFORM_PROFILE_COOL:
+			ret = set_state(DELL_COOL_BOTTOM);
 			break;
 		default:
 			return -EOPNOTSUPP;
@@ -103,10 +106,10 @@ static int pp_get(struct platform_profile_handler *pprof, enum platform_profile_
 			*profile = PLATFORM_PROFILE_PERFORMANCE;
 			break;
 		case DELL_COOL_BOTTOM:
-			*profile = PLATFORM_PROFILE_PERFORMANCE;
+			*profile = PLATFORM_PROFILE_COOL;
 			break;
 		case DELL_QUIET:
-			*profile = PLATFORM_PROFILE_LOW_POWER;
+			*profile = PLATFORM_PROFILE_QUIET;
 			break;
 		default:
 			return -EINVAL;
@@ -171,14 +174,14 @@ int init_module(void)
 			break;
 	}
 	
-	struct platform_profile_handler *handler;
 	handler = kzalloc(sizeof(struct platform_profile_handler), GFP_KERNEL);
 	if (!handler)
 		return -ENOMEM;
 	handler->profile_get = pp_get;
 	handler->profile_set = pp_set;
 
-	set_bit(PLATFORM_PROFILE_LOW_POWER, handler->choices);
+	set_bit(PLATFORM_PROFILE_QUIET, handler->choices);
+	set_bit(PLATFORM_PROFILE_COOL, handler->choices);
 	set_bit(PLATFORM_PROFILE_BALANCED, handler->choices);
 	set_bit(PLATFORM_PROFILE_PERFORMANCE, handler->choices);
 
