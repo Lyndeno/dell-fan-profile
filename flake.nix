@@ -10,7 +10,7 @@
     kernel = pkgs.linux;
   in {
     devShells.x86_64-linux.default = pkgs.mkShell {
-      buildInputs = with pkgs; [ kernel.dev gnumake ];
+      buildInputs = with pkgs; [ kernel.dev gnumake bear];
       KERNELRELEASE="${kernel.modDirVersion}";
       KERNEL_DIR="${kernel.dev}/lib/modules/${kernel.modDirVersion}/build";
     };
