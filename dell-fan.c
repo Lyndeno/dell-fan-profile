@@ -199,3 +199,61 @@ void cleanup_module(void)
 }
 
 MODULE_LICENSE("GPL");
+
+// Derived from smbios-thermal-ctl
+//
+// cbClass 17
+// cbSelect 19
+// User Selectable Thermal Tables(USTT)
+// cbArg1 determines the function to be performed
+// cbArg1 0x0 = Get Thermal Information
+//  cbRES1         Standard return codes (0, -1, -2)
+//  cbRES2, byte 0  Bitmap of supported thermal modes. A mode is supported if its bit is set to 1
+//     Bit 0 Balanced
+//     Bit 1 Cool Bottom
+//     Bit 2 Quiet
+//     Bit 3 Performance
+//  cbRES2, byte 1 Bitmap of supported Active Acoustic Controller (AAC) modes. Each mode
+//                 corresponds to the supported thermal modes in byte 0. A mode is supported if
+//                 its bit is set to 1.
+//     Bit 0 AAC (Balanced)
+//     Bit 1 AAC (Cool Bottom
+//     Bit 2 AAC (Quiet)
+//     Bit 3 AAC (Performance)
+//  cbRes3, byte 0 Current Thermal Mode
+//     Bit 0 Balanced
+//     Bit 1 Cool Bottom
+//     Bit 2 Quiet
+//     Bit 3 Performanc
+//  cbRes3, byte 1  AAC Configuration type
+//          0       Global (AAC enable/disable applies to all supported USTT modes)
+//          1       USTT mode specific
+//  cbRes3, byte 2  Current Active Acoustic Controller (AAC) Mode
+//     If AAC Configuration Type is Global,
+//          0       AAC mode disabled
+//          1       AAC mode enabled
+//     If AAC Configuration Type is USTT mode specific (multiple bits may be set),
+//          Bit 0 AAC (Balanced)
+//          Bit 1 AAC (Cool Bottom
+//          Bit 2 AAC (Quiet)
+//          Bit 3 AAC (Performance)
+//  cbRes3, byte 3  Current Fan Failure Mode
+//     Bit 0 Minimal Fan Failure (at least one fan has failed, one fan working)
+//     Bit 1 Catastrophic Fan Failure (all fans have failed)
+//  cbArg1 0x1   (Set Thermal Information), both desired thermal mode and
+//               desired AAC mode shall be applied
+//  cbArg2, byte 0  Desired Thermal Mode to set (only one bit may be set for this parameter)
+//     Bit 0 Balanced
+//     Bit 1 Cool Bottom
+//     Bit 2 Quiet
+//     Bit 3 Performance
+//  cbArg2, byte 1  Desired Active Acoustic Controller (AAC) Mode to set
+//     If AAC Configuration Type is Global,
+//         0  AAC mode disabled
+//         1  AAC mode enabled
+//
+//     If AAC Configuration Type is USTT mode specific (multiple bits may be set for this parameter),
+//         Bit 0 AAC (Balanced)
+//         Bit 1 AAC (Cool Bottom
+//         Bit 2 AAC (Quiet)
+//         Bit 3 AAC (Performance)
