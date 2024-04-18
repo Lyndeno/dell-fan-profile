@@ -45,7 +45,6 @@ int set_state(enum dell_fan_modes state) {
 
 	dell_fill_request(&buffer, 0x1, state, 0, 0);
 	fan_ret = dell_send_request(&buffer, CLASS_INFO, 19);
-	fan_ret = dell_send_request(&buffer, CLASS_INFO, 19);
 	return fan_ret;
 }
 
@@ -98,60 +97,6 @@ static int pp_get(struct platform_profile_handler *pprof, enum platform_profile_
 
 int init_module(void)
 {
-	pr_info("Hello world 1.\n");
-
-	struct calling_interface_buffer buffer;
-	int fan_state;
-	int fan_ret;
-	int status;
-	int ret;
-
-	dell_fill_request(&buffer, 0, 0, 0, 0);
-	ret = dell_send_request(&buffer, CLASS_INFO, 19);
-	if (ret)
-		return ret;
-	status = buffer.output[1];
-
-	dell_fill_request(&buffer, 0x0, 0, 0, 0);
-	fan_ret = dell_send_request(&buffer, CLASS_INFO, 19);
-	if (fan_ret)
-		return fan_ret;
-	fan_state = buffer.output[2];
-
-	pr_info("return:\t%d\n", ret);
-	pr_info("status:\t0x%X\n", status);
-	pr_info("Bit 0 : Balanced supported:   %u\n",
-		   status & DELL_BALANCED);
-	pr_info("Bit 1 : Cool Bottom supported:   %u\n",
-		   (status & DELL_COOL_BOTTOM) >> 1);
-	pr_info("Bit 2 : Quiet supported:   %u\n",
-		   (status & DELL_QUIET) >> 2);
-	pr_info("Bit 3 : Performance supported:   %u\n",
-		   (status & DELL_PERFORMANCE) >> 3);
-	pr_info("Bit 0 : Balanced enabled:   %lu\n",
-		   fan_state & BIT(0));
-	pr_info("Bit 1 : Cool Bottom enabled:   %lu\n",
-		   (fan_state & BIT(1)) >> 1);
-	pr_info("Bit 2 : Quiet enabled:   %lu\n",
-		   (fan_state & BIT(2)) >> 2);
-	pr_info("Bit 3 : Performance enabled:   %lu\n",
-		   (fan_state & BIT(3)) >> 3);
-	
-	switch (get_state()) {
-		case DELL_BALANCED:
-			pr_info("Balanced\n");
-			break;
-		case DELL_COOL_BOTTOM:
-			pr_info("Cool bottom\n");
-			break;
-		case DELL_QUIET:
-			pr_info("Quiet\n");
-			break;
-		case DELL_PERFORMANCE:
-			pr_info("Performance\n");
-			break;
-	}
-	
 	handler = kzalloc(sizeof(struct platform_profile_handler), GFP_KERNEL);
 	if (!handler)
 		return -ENOMEM;
@@ -173,7 +118,6 @@ void cleanup_module(void)
 {
 	platform_profile_remove();
 	kfree(handler);
-	pr_info("Goodbye world 1.\n");
 }
 
 MODULE_LICENSE("GPL");
