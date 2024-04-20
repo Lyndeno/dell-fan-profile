@@ -5,6 +5,7 @@
 #include <linux/slab.h>
 
 #include "kernel/dell-request.h"
+#include "linux/wmi.h"
 
 static struct platform_profile_handler *handler;
 
@@ -39,11 +40,21 @@ enum dell_fan_mode_bits get_state(void) {
 	}
 }
 
+u32 get_acc_mode(void) {
+	struct calling_interface_buffer buffer;
+	int fan_ret;
+	dell_fill_request(&buffer, 0x0, 0, 0, 0);
+	fan_ret = dell_send_request(&buffer, CLASS_INFO, 19);
+	if (fan_ret)
+		return fan_ret;
+	return ((buffer.output[3] >> 8) & 0xFF);
+}
+
 int set_state(enum dell_fan_mode_bits state) {
 	struct calling_interface_buffer buffer;
 	int fan_ret;
 
-	dell_fill_request(&buffer, 0x1, BIT(state), 0, 0);
+	dell_fill_request(&buffer, 0x1, (get_acc_mode() << 8) | BIT(state), 0, 0);
 	fan_ret = dell_send_request(&buffer, CLASS_INFO, 19);
 	return fan_ret;
 }
