@@ -9,14 +9,14 @@
 static struct platform_profile_handler *handler;
 
 
-enum dell_fan_modes {
-	DELL_BALANCED = BIT(0),
-	DELL_COOL_BOTTOM = BIT(1),
-	DELL_QUIET = BIT(2),
-	DELL_PERFORMANCE = BIT(3),
+enum dell_fan_mode_bits {
+	DELL_BALANCED = 0,
+	DELL_COOL_BOTTOM = 1,
+	DELL_QUIET = 2,
+	DELL_PERFORMANCE = 3,
 };
 
-enum dell_fan_modes get_state(void) {
+enum dell_fan_mode_bits get_state(void) {
 	struct calling_interface_buffer buffer;
 	int fan_state;
 	int fan_ret;
@@ -26,24 +26,24 @@ enum dell_fan_modes get_state(void) {
 	if (fan_ret)
 		return fan_ret;
 	fan_state = buffer.output[2];
-	if ((fan_state & DELL_BALANCED) == DELL_BALANCED){
+	if ((fan_state >> DELL_BALANCED) & 1){
 		return DELL_BALANCED;
-	} else if ((fan_state & DELL_COOL_BOTTOM) == DELL_COOL_BOTTOM) {
+	} else if ((fan_state >> DELL_COOL_BOTTOM) & 1) {
 		return DELL_COOL_BOTTOM;
-	} else if ((fan_state & DELL_QUIET) == DELL_QUIET) {
+	} else if ((fan_state >> DELL_QUIET) & 1) {
 		return DELL_QUIET;
-	} else if ((fan_state & DELL_PERFORMANCE) == DELL_PERFORMANCE) {
+	} else if ((fan_state >> DELL_PERFORMANCE) & 1) {
 		return DELL_PERFORMANCE;
 	} else {
 		return DELL_PERFORMANCE;
 	}
 }
 
-int set_state(enum dell_fan_modes state) {
+int set_state(enum dell_fan_mode_bits state) {
 	struct calling_interface_buffer buffer;
 	int fan_ret;
 
-	dell_fill_request(&buffer, 0x1, state, 0, 0);
+	dell_fill_request(&buffer, 0x1, BIT(state), 0, 0);
 	fan_ret = dell_send_request(&buffer, CLASS_INFO, 19);
 	return fan_ret;
 }
