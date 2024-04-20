@@ -40,6 +40,17 @@ enum dell_fan_mode_bits get_state(void) {
 	}
 }
 
+int get_supported(void) {
+	struct calling_interface_buffer buffer;
+	int fan_ret;
+
+	dell_fill_request(&buffer, 0x0, 0, 0, 0);
+	fan_ret = dell_send_request(&buffer, CLASS_INFO, 19);
+	if (fan_ret)
+		return fan_ret;
+	return buffer.output[1] & 0xF;
+}
+
 u32 get_acc_mode(void) {
 	struct calling_interface_buffer buffer;
 	int fan_ret;
@@ -114,10 +125,16 @@ int init_module(void)
 	handler->profile_get = pp_get;
 	handler->profile_set = pp_set;
 
-	set_bit(PLATFORM_PROFILE_QUIET, handler->choices);
-	set_bit(PLATFORM_PROFILE_COOL, handler->choices);
-	set_bit(PLATFORM_PROFILE_BALANCED, handler->choices);
-	set_bit(PLATFORM_PROFILE_PERFORMANCE, handler->choices);
+	int supported = get_supported();
+
+	if ((supported >> DELL_QUIET) & 1)
+		set_bit(PLATFORM_PROFILE_QUIET, handler->choices);
+	if ((supported >> DELL_COOL_BOTTOM) & 1)
+		set_bit(PLATFORM_PROFILE_COOL, handler->choices);
+	if ((supported >> DELL_BALANCED) & 1)
+		set_bit(PLATFORM_PROFILE_BALANCED, handler->choices);
+	if ((supported >> DELL_PERFORMANCE) & 1)
+		set_bit(PLATFORM_PROFILE_PERFORMANCE, handler->choices);
 
 	platform_profile_register(handler);
 
