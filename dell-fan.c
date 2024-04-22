@@ -4,9 +4,9 @@
 #include <linux/platform_profile.h>
 #include <linux/slab.h>
 
-#include "asm-generic/errno-base.h"
 #include "kernel/dell-request.h"
-#include "linux/wmi.h"
+
+#define SELECT_THERMAL_MANAGEMENT 19
 
 static struct platform_profile_handler *handler;
 
@@ -24,7 +24,7 @@ int get_state(void) {
 	int fan_ret;
 
 	dell_fill_request(&buffer, 0x0, 0, 0, 0);
-	fan_ret = dell_send_request(&buffer, CLASS_INFO, 19);
+	fan_ret = dell_send_request(&buffer, CLASS_INFO, SELECT_THERMAL_MANAGEMENT);
 	if (fan_ret)
 		return fan_ret;
 	fan_state = buffer.output[2];
@@ -46,7 +46,7 @@ int get_supported(int *supported_bits) {
 	int fan_ret;
 
 	dell_fill_request(&buffer, 0x0, 0, 0, 0);
-	fan_ret = dell_send_request(&buffer, CLASS_INFO, 19);
+	fan_ret = dell_send_request(&buffer, CLASS_INFO, SELECT_THERMAL_MANAGEMENT);
 	if (fan_ret)
 		return fan_ret;
 	*supported_bits = buffer.output[1] & 0xF;
@@ -57,7 +57,7 @@ int get_acc_mode(int *acc_mode) {
 	struct calling_interface_buffer buffer;
 	int fan_ret;
 	dell_fill_request(&buffer, 0x0, 0, 0, 0);
-	fan_ret = dell_send_request(&buffer, CLASS_INFO, 19);
+	fan_ret = dell_send_request(&buffer, CLASS_INFO, SELECT_THERMAL_MANAGEMENT);
 	if (fan_ret)
 		return fan_ret;
 	*acc_mode = ((buffer.output[3] >> 8) & 0xFF);
@@ -74,7 +74,7 @@ int set_state(enum dell_fan_mode_bits state) {
 	}
 
 	dell_fill_request(&buffer, 0x1, (acc_mode << 8) | BIT(state), 0, 0);
-	ret = dell_send_request(&buffer, CLASS_INFO, 19);
+	ret = dell_send_request(&buffer, CLASS_INFO, SELECT_THERMAL_MANAGEMENT);
 	return ret;
 }
 
