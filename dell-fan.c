@@ -4,6 +4,7 @@
 #include <linux/platform_profile.h>
 #include <linux/slab.h>
 
+#include "asm-generic/errno-base.h"
 #include "kernel/dell-request.h"
 #include "linux/wmi.h"
 
@@ -17,7 +18,7 @@ enum dell_fan_mode_bits {
 	DELL_PERFORMANCE = 3,
 };
 
-enum dell_fan_mode_bits get_state(void) {
+int get_state(void) {
 	struct calling_interface_buffer buffer;
 	int fan_state;
 	int fan_ret;
@@ -36,11 +37,11 @@ enum dell_fan_mode_bits get_state(void) {
 	} else if ((fan_state >> DELL_PERFORMANCE) & 1) {
 		return DELL_PERFORMANCE;
 	} else {
-		return DELL_PERFORMANCE;
+		return 0;
 	}
 }
 
-int get_supported(void) {
+int get_supported(int *supported_bits) {
 	struct calling_interface_buffer buffer;
 	int fan_ret;
 
@@ -48,26 +49,33 @@ int get_supported(void) {
 	fan_ret = dell_send_request(&buffer, CLASS_INFO, 19);
 	if (fan_ret)
 		return fan_ret;
-	return buffer.output[1] & 0xF;
+	*supported_bits = buffer.output[1] & 0xF;
+	return 0;
 }
 
-u32 get_acc_mode(void) {
+int get_acc_mode(int *acc_mode) {
 	struct calling_interface_buffer buffer;
 	int fan_ret;
 	dell_fill_request(&buffer, 0x0, 0, 0, 0);
 	fan_ret = dell_send_request(&buffer, CLASS_INFO, 19);
 	if (fan_ret)
 		return fan_ret;
-	return ((buffer.output[3] >> 8) & 0xFF);
+	*acc_mode = ((buffer.output[3] >> 8) & 0xFF);
+	return 0;
 }
 
 int set_state(enum dell_fan_mode_bits state) {
 	struct calling_interface_buffer buffer;
-	int fan_ret;
+	int ret;
+	int acc_mode;
+	ret = get_acc_mode(&acc_mode);
+	if (ret) {
+		return ret;
+	}
 
-	dell_fill_request(&buffer, 0x1, (get_acc_mode() << 8) | BIT(state), 0, 0);
-	fan_ret = dell_send_request(&buffer, CLASS_INFO, 19);
-	return fan_ret;
+	dell_fill_request(&buffer, 0x1, (acc_mode << 8) | BIT(state), 0, 0);
+	ret = dell_send_request(&buffer, CLASS_INFO, 19);
+	return ret;
 }
 
 static int pp_set(struct platform_profile_handler *pprof,
@@ -119,13 +127,21 @@ static int pp_get(struct platform_profile_handler *pprof, enum platform_profile_
 
 int init_module(void)
 {
+	int ret;
+	int supported;
+	ret = get_supported(&supported);
+
+	if (ret != 0 || supported == 0) {
+		pr_info("Dell Thermal Management not supported");
+		return -ENXIO;
+	}
+
 	handler = kzalloc(sizeof(struct platform_profile_handler), GFP_KERNEL);
 	if (!handler)
 		return -ENOMEM;
 	handler->profile_get = pp_get;
 	handler->profile_set = pp_set;
 
-	int supported = get_supported();
 
 	if ((supported >> DELL_QUIET) & 1)
 		set_bit(PLATFORM_PROFILE_QUIET, handler->choices);
