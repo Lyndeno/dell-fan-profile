@@ -18,7 +18,7 @@ enum dell_fan_mode_bits {
 	DELL_PERFORMANCE = 3,
 };
 
-int get_state(void) {
+static int get_state(void) {
 	struct calling_interface_buffer buffer;
 	int fan_state;
 	int fan_ret;
@@ -41,7 +41,7 @@ int get_state(void) {
 	}
 }
 
-int get_supported(int *supported_bits) {
+static int get_supported(int *supported_bits) {
 	struct calling_interface_buffer buffer;
 	int fan_ret;
 
@@ -53,7 +53,7 @@ int get_supported(int *supported_bits) {
 	return 0;
 }
 
-int get_acc_mode(int *acc_mode) {
+static int get_acc_mode(int *acc_mode) {
 	struct calling_interface_buffer buffer;
 	int fan_ret;
 	dell_fill_request(&buffer, 0x0, 0, 0, 0);
@@ -64,7 +64,7 @@ int get_acc_mode(int *acc_mode) {
 	return 0;
 }
 
-int set_state(enum dell_fan_mode_bits state) {
+static int set_state(enum dell_fan_mode_bits state) {
 	struct calling_interface_buffer buffer;
 	int ret;
 	int acc_mode;
