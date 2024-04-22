@@ -20,21 +20,21 @@ enum thermal_mode_bits {
 
 static int thermal_get_mode(void) {
 	struct calling_interface_buffer buffer;
-	int fan_state;
-	int fan_ret;
+	int state;
+	int ret;
 
 	dell_fill_request(&buffer, 0x0, 0, 0, 0);
-	fan_ret = dell_send_request(&buffer, CLASS_INFO, SELECT_THERMAL_MANAGEMENT);
-	if (fan_ret)
-		return fan_ret;
-	fan_state = buffer.output[2];
-	if ((fan_state >> DELL_BALANCED) & 1){
+	ret = dell_send_request(&buffer, CLASS_INFO, SELECT_THERMAL_MANAGEMENT);
+	if (ret)
+		return ret;
+	state = buffer.output[2];
+	if ((state >> DELL_BALANCED) & 1){
 		return DELL_BALANCED;
-	} else if ((fan_state >> DELL_COOL_BOTTOM) & 1) {
+	} else if ((state >> DELL_COOL_BOTTOM) & 1) {
 		return DELL_COOL_BOTTOM;
-	} else if ((fan_state >> DELL_QUIET) & 1) {
+	} else if ((state >> DELL_QUIET) & 1) {
 		return DELL_QUIET;
-	} else if ((fan_state >> DELL_PERFORMANCE) & 1) {
+	} else if ((state >> DELL_PERFORMANCE) & 1) {
 		return DELL_PERFORMANCE;
 	} else {
 		return 0;
@@ -43,23 +43,23 @@ static int thermal_get_mode(void) {
 
 static int thermal_get_supported_modes(int *supported_bits) {
 	struct calling_interface_buffer buffer;
-	int fan_ret;
+	int ret;
 
 	dell_fill_request(&buffer, 0x0, 0, 0, 0);
-	fan_ret = dell_send_request(&buffer, CLASS_INFO, SELECT_THERMAL_MANAGEMENT);
-	if (fan_ret)
-		return fan_ret;
+	ret = dell_send_request(&buffer, CLASS_INFO, SELECT_THERMAL_MANAGEMENT);
+	if (ret)
+		return ret;
 	*supported_bits = buffer.output[1] & 0xF;
 	return 0;
 }
 
 static int thermal_get_acc_mode(int *acc_mode) {
 	struct calling_interface_buffer buffer;
-	int fan_ret;
+	int ret;
 	dell_fill_request(&buffer, 0x0, 0, 0, 0);
-	fan_ret = dell_send_request(&buffer, CLASS_INFO, SELECT_THERMAL_MANAGEMENT);
-	if (fan_ret)
-		return fan_ret;
+	ret = dell_send_request(&buffer, CLASS_INFO, SELECT_THERMAL_MANAGEMENT);
+	if (ret)
+		return ret;
 	*acc_mode = ((buffer.output[3] >> 8) & 0xFF);
 	return 0;
 }
@@ -98,10 +98,7 @@ static int thermal_platform_profile_set(struct platform_profile_handler *pprof,
 			return -EOPNOTSUPP;
 	}
 
-	if (ret < 0)
-		return ret;
-
-	return 0;
+	return ret;
 }
 
 static int thermal_platform_profile_get(struct platform_profile_handler *pprof, enum platform_profile_option *profile) {
@@ -128,10 +125,10 @@ static int thermal_platform_profile_get(struct platform_profile_handler *pprof, 
 int init_module(void)
 {
 	int ret;
-	int supported;
-	ret = thermal_get_supported_modes(&supported);
+	int supported_modes;
+	ret = thermal_get_supported_modes(&supported_modes);
 
-	if (ret != 0 || supported == 0) {
+	if (ret != 0 || supported_modes == 0) {
 		pr_info("Dell Thermal Management not supported");
 		return -ENXIO;
 	}
@@ -143,13 +140,13 @@ int init_module(void)
 	handler->profile_set = thermal_platform_profile_set;
 
 
-	if ((supported >> DELL_QUIET) & 1)
+	if ((supported_modes >> DELL_QUIET) & 1)
 		set_bit(PLATFORM_PROFILE_QUIET, handler->choices);
-	if ((supported >> DELL_COOL_BOTTOM) & 1)
+	if ((supported_modes >> DELL_COOL_BOTTOM) & 1)
 		set_bit(PLATFORM_PROFILE_COOL, handler->choices);
-	if ((supported >> DELL_BALANCED) & 1)
+	if ((supported_modes >> DELL_BALANCED) & 1)
 		set_bit(PLATFORM_PROFILE_BALANCED, handler->choices);
-	if ((supported >> DELL_PERFORMANCE) & 1)
+	if ((supported_modes >> DELL_PERFORMANCE) & 1)
 		set_bit(PLATFORM_PROFILE_PERFORMANCE, handler->choices);
 
 	platform_profile_register(handler);
