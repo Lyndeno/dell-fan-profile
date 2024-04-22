@@ -11,14 +11,14 @@
 static struct platform_profile_handler *handler;
 
 
-enum dell_fan_mode_bits {
+enum thermal_mode_bits {
 	DELL_BALANCED = 0,
 	DELL_COOL_BOTTOM = 1,
 	DELL_QUIET = 2,
 	DELL_PERFORMANCE = 3,
 };
 
-static int get_state(void) {
+static int thermal_get_mode(void) {
 	struct calling_interface_buffer buffer;
 	int fan_state;
 	int fan_ret;
@@ -41,7 +41,7 @@ static int get_state(void) {
 	}
 }
 
-static int get_supported(int *supported_bits) {
+static int thermal_get_supported_modes(int *supported_bits) {
 	struct calling_interface_buffer buffer;
 	int fan_ret;
 
@@ -53,7 +53,7 @@ static int get_supported(int *supported_bits) {
 	return 0;
 }
 
-static int get_acc_mode(int *acc_mode) {
+static int thermal_get_acc_mode(int *acc_mode) {
 	struct calling_interface_buffer buffer;
 	int fan_ret;
 	dell_fill_request(&buffer, 0x0, 0, 0, 0);
@@ -64,11 +64,11 @@ static int get_acc_mode(int *acc_mode) {
 	return 0;
 }
 
-static int set_state(enum dell_fan_mode_bits state) {
+static int thermal_set_mode(enum thermal_mode_bits state) {
 	struct calling_interface_buffer buffer;
 	int ret;
 	int acc_mode;
-	ret = get_acc_mode(&acc_mode);
+	ret = thermal_get_acc_mode(&acc_mode);
 	if (ret) {
 		return ret;
 	}
@@ -78,21 +78,21 @@ static int set_state(enum dell_fan_mode_bits state) {
 	return ret;
 }
 
-static int pp_set(struct platform_profile_handler *pprof,
+static int thermal_platform_profile_set(struct platform_profile_handler *pprof,
 					enum platform_profile_option profile) {
 	int ret;
 	switch (profile) {
 		case PLATFORM_PROFILE_BALANCED:
-			ret = set_state(DELL_BALANCED);
+			ret = thermal_set_mode(DELL_BALANCED);
 			break;
 		case PLATFORM_PROFILE_PERFORMANCE:
-			ret = set_state(DELL_PERFORMANCE);
+			ret = thermal_set_mode(DELL_PERFORMANCE);
 			break;
 		case PLATFORM_PROFILE_QUIET:
-			ret = set_state(DELL_QUIET);
+			ret = thermal_set_mode(DELL_QUIET);
 			break;
 		case PLATFORM_PROFILE_COOL:
-			ret = set_state(DELL_COOL_BOTTOM);
+			ret = thermal_set_mode(DELL_COOL_BOTTOM);
 			break;
 		default:
 			return -EOPNOTSUPP;
@@ -104,8 +104,8 @@ static int pp_set(struct platform_profile_handler *pprof,
 	return 0;
 }
 
-static int pp_get(struct platform_profile_handler *pprof, enum platform_profile_option *profile) {
-	switch (get_state()) {
+static int thermal_platform_profile_get(struct platform_profile_handler *pprof, enum platform_profile_option *profile) {
+	switch (thermal_get_mode()) {
 		case DELL_BALANCED:
 			*profile = PLATFORM_PROFILE_BALANCED;
 			break;
@@ -129,7 +129,7 @@ int init_module(void)
 {
 	int ret;
 	int supported;
-	ret = get_supported(&supported);
+	ret = thermal_get_supported_modes(&supported);
 
 	if (ret != 0 || supported == 0) {
 		pr_info("Dell Thermal Management not supported");
@@ -139,8 +139,8 @@ int init_module(void)
 	handler = kzalloc(sizeof(struct platform_profile_handler), GFP_KERNEL);
 	if (!handler)
 		return -ENOMEM;
-	handler->profile_get = pp_get;
-	handler->profile_set = pp_set;
+	handler->profile_get = thermal_platform_profile_get;
+	handler->profile_set = thermal_platform_profile_set;
 
 
 	if ((supported >> DELL_QUIET) & 1)
