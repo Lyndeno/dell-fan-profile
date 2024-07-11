@@ -1,4 +1,4 @@
-obj-m += dell-fan.o
+obj-m += dell-pc.o
 
 PWD := $(CURDIR)
 
